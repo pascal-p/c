@@ -1,0 +1,97 @@
+# (c) Corto Inc, 2012
+#
+# ========================================================================
+# declaration
+# ========================================================================
+#
+SHELL     = /bin/sh
+MYNAME    = vector
+RM        = /bin/rm
+MAKE      = /usr/bin/make
+STRIP     = /usr/bin/strip
+FIND      = /usr/bin/find
+
+MAKEFILE  = $(.CURDIR)/Makefile
+VERBOSE   = 1
+
+INCDRS    = -I$(.CURDIR)/inc -I/usr/local/include/glib-2.0
+LIBDRS    = -L/usr/local/lib -L$(.CURDIR)/lib -L$(.CURDIR)/src
+
+# -lc for rand, srand, ... -lm for sqrt, ...
+LIBS      = -lglib-2.0 
+
+CC        = /usr/bin/clang
+LL        = $(CC)
+#
+.if defined(DEBUG)
+CFLAGS     = -g -Wall -Wpointer-arith -std=c99  -O0 -pipe 
+CFLAGS_L   = -Wall -Wpointer-arith -std=c99 -O0 -pipe
+.else
+CFLAGS     = -std=c99 -O2 -Wall -pipe
+CFLAGS_L   = $(CFLAGS)
+.endif
+# 
+
+## deps
+SRC1      = $(.CURDIR)/lib/$(MYNAME).c
+OBJ1      = $(.CURDIR)/obj/$(MYNAME).o 
+INC      += $(.CURDIR)/inc/$(MYNAME).h
+OBJS     += $(OBJ1)
+
+## main
+DSTFILE   = $(.CURDIR)/bin/test_$(MYNAME)
+SRC       = $(.CURDIR)/src/test_$(MYNAME).c
+_OBJ      = $(SRC:.c=.o)
+OBJ       = ${_OBJ:C/src/obj/}
+OBJS     += $(OBJ)
+
+
+# ========================================================================
+# rules
+# ========================================================================
+#
+
+# here we use the basename as an alias on the following targets 
+# $(DSTFILE)
+#
+
+$(DSTFILE): $(OBJS) $(INC) $(SRC)
+	@echo "++ Linking stage for [$@]"
+	$(LL) $(CFLAGS_L) -o $@ $(OBJS) $(LIBDRS) $(LIBS)
+
+
+$(OBJ1): $(SRC1)
+	@echo "-- object stage with [$(OBJ1) // [$@]]"
+	$(CC) $(CFLAGS) $(INCDRS) -c $(SRC1) -o $@
+
+$(OBJ): $(SRC)
+	@echo " - object stage with [$(OBJ)]"
+	$(CC) $(CFLAGS) $(INCDRS) -c $(SRC) -o ${OBJ}
+
+# build the whole project and stripe the executable 
+#
+install: 
+	$(MAKE) -f $(MAKEFILE) all
+	$(STRIP) $(DSTFILE)
+
+#
+all:
+	$(MAKE) -f $(MAKEFILE) clean
+#	$(MAKE) -f $(MAKEFILE) depend
+	$(MAKE) -f $(MAKEFILE) $(DSTFILE)
+
+# generate the object files necessary to the project
+#
+depend:
+.for _name in $(ALLSRCFILE)
+	makedepend $(INCDRS) -f $(MAKEFILE) ${_name}
+	$(MAKE) -f $(MAKEFILE) ${_name}.o
+.endfor
+
+
+# do some vacuum cleaning
+#
+clean:
+	@$(RM) -f $(OBJ) $(OBJ1) $(OBJ2)
+	@$(RM) -f $(DSTFILE)
+	@$(FIND) $(.CURDIR) -type f -name "*~" -delete

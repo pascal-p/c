@@ -1,0 +1,128 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <assert.h>
+
+#define ASSERT
+// #define TRACE
+
+
+static char * _alloc(unsigned int len) {
+  char *rstr = calloc(len, 1);  // note size of char is 1
+
+  if (rstr == NULL) {
+    perror("Could NOT allocate space for the new string");
+    exit(1);
+  }
+ 
+  return rstr;
+}
+
+char *rev_simple(char *pstr) {
+  unsigned int len = strlen(pstr);
+  char *rstr =  _alloc(len);
+
+  if (len == 0)
+    return rstr;
+  
+  char *pend = pstr + len - 1;
+  char *p    = rstr;
+
+#ifdef ASSERT
+  if (len == 1) 
+    assert(pstr == pend);
+#endif
+#ifdef TRACE
+  printf("Addresses pstr: %d, pend: %d // rstr: %d, p: %d\n", (int) pstr, (int) pend, (int) rstr, (int) p);
+#endif
+
+  unsigned int l = len;
+  do {
+#ifdef TRACE
+    printf("- Copy of char [%c]\n", *pend);
+#endif
+    *p++ = *pend--;
+#ifdef TRACE
+    printf("Addresses pstr: %d, pend: %d // rstr: %d, p: %d\n", (int) pstr, (int) pend, (int) rstr, (int) p);
+#endif
+  } while (--l > 0); 
+  
+  *p = '\0';
+  return rstr;
+}
+
+
+char *rev_eff(char *pstr) {
+  unsigned int len = strlen(pstr);
+  char *rstr =  _alloc(len);
+
+  if (len == 0)
+    return rstr;
+  
+  // copy the string pstr to rstr
+  memcpy(rstr, pstr, len);
+
+  // now define 2 pointers, 1 at the beginning of str rstr, the other at the end of rstr
+  char *pbeg = rstr;
+  char *pend = rstr + len - 1;
+  char *p    = pend; p++;
+
+  // now swap the 2 char, and inc, dec the pointers
+  do {
+    char c = *pend;
+    *pend  = *pbeg;
+    *pbeg  = c;
+    
+    pend--;
+    pbeg++;
+  } while (pbeg < pend);
+  
+  *p = '\0';
+  return rstr;
+}
+
+
+
+void test_rev_simple(char *c_str) {
+  char *r_str = rev_simple(c_str);
+  //
+  printf("initial string of len [%3d]: [%s]\n", (unsigned) strlen(c_str), c_str);
+  if (r_str != NULL) {
+    printf("reverse[1] string of len [%3d]: [%s]\n", (unsigned) strlen(r_str), r_str);
+    free(r_str);
+  }
+  //
+  char *r_str2 = rev_eff(c_str);
+  if (r_str2 != NULL) {
+    printf("reverse[2] string of len [%3d]: [%s]\n", (unsigned) strlen(r_str2), r_str2);
+    free(r_str2);
+  }
+  //
+  return;
+}
+
+
+int main(int argc, char **argv) {
+  char *c_str = "A string to reverse";
+  test_rev_simple(c_str);
+
+  c_str = "";
+  test_rev_simple(c_str);
+
+  c_str = "a";
+  test_rev_simple(c_str);
+
+ 
+  c_str = "radar";
+  test_rev_simple(c_str);
+
+  c_str = "elle";
+  test_rev_simple(c_str); 
+
+
+  c_str = "Preprocessors are a way of making text processing with your C program before they are actually compiled. Before the actual compilation of every C program it is passed through a Preprocessor. The Preprocessor looks through the program trying to find out specific instructions called Preprocessor directives that it can understand. All Preprocessor directives begin with the # (hash) symbol.";
+  test_rev_simple(c_str); 
+  
+
+  return 0;
+}
